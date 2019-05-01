@@ -16,7 +16,7 @@ module Storage = struct
 
   let credentials =
     let open Irmin.Type in
-    record "credentials" (fun access_key secret_key token expiration ->
+    record "s3_credentials" (fun access_key secret_key token expiration ->
         Credentials.make ~access_key ~secret_key ?token ?expiration () )
     |+ field "access_key" string (fun x -> x.Credentials.access_key)
     |+ field "secret_key" string (fun x -> x.Credentials.secret_key)
@@ -26,7 +26,7 @@ module Storage = struct
 
   let t =
     let open Irmin.Type in
-    record "storage" (fun bucket auth region -> context ~bucket ~auth ~region)
+    record "s3" (fun bucket auth region -> context ~bucket ~auth ~region)
     |+ field "bucket" string (fun x -> x.bucket)
     |+ field "auth" credentials (fun x -> x.auth)
     |+ field "region" string (fun x -> Region.to_string x.region)

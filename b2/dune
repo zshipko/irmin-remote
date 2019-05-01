@@ -1,0 +1,4 @@
+(library
+ (name irmin_remote_b2)
+ (public_name irmin-remote-b2)
+ (libraries irmin-remote irmin-mem irmin-git irmin-fs b2))

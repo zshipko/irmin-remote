@@ -72,6 +72,39 @@ module Client (Client : Cohttp_lwt.S.Client) = struct
       |+ field "token" token (fun x -> x.token)
       |+ field "bucket" bucket (fun x -> x.bucket)
       |> sealr
+
+    let get { token; bucket } key =
+      API.list_file_names ~token ~start_file_name:key ~max_file_count:1
+        ~bucket_id:bucket.bucket_id ()
+      >>= fun (files, _) ->
+      match files with
+      | f :: _ when f.file_name = key ->
+          API.get_download_authorization ~token ~bucket_id:bucket.bucket_id
+            ~file_name_prefix:key ~valid_duration_in_seconds:60
+          >>= fun auth ->
+          API.download_file_by_name ~auth ~file_name:key () >>= Lwt.return_some
+      | _ -> Lwt.return_none
+
+    let exists { token; bucket } key =
+      API.list_file_names ~token ~start_file_name:key ~max_file_count:1
+        ~bucket_id:bucket.bucket_id ()
+      >|= fun (files, _) ->
+      match files with f :: _ -> f.file_name = key | [] -> false
+
+    let put { token; bucket } key value =
+      API.get_upload_url ~token ~bucket_id:bucket.bucket_id >>= fun url ->
+      let data = Lwt_stream.of_string value in
+      API.upload_file ~url ~data ~file_name:key () >>= fun _ -> Lwt.return_unit
+
+    let del { token; bucket } key =
+      API.list_file_names ~token ~start_file_name:key ~max_file_count:1
+        ~bucket_id:bucket.bucket_id ()
+      >>= fun (files, _) ->
+      match files with
+      | f :: _ when f.file_name = key ->
+          API.delete_file_version ~token ~file_name:key ~file_id:f.file_id
+          >>= fun _ -> Lwt.return_unit
+      | _ -> Lwt.return_unit
   end
 
   module Mem = struct

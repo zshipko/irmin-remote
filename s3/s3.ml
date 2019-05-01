@@ -57,8 +57,3 @@ module Storage = struct
     | Ok _ -> ()
     | Error _ -> invalid_arg "Storage.put"
 end
-
-module Mem = struct
-  module Make = Irmin_remote.Make (Storage) (Irmin_mem.Atomic_write)
-  module KV = Irmin_remote.KV (Storage) (Irmin_mem.Atomic_write)
-end

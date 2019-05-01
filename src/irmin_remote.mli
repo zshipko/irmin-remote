@@ -29,3 +29,9 @@ module Make (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) :
 
 module KV (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) :
   Irmin.KV_MAKER
+
+module Mem : sig
+  module Make (Storage : STORAGE) : Irmin.S_MAKER
+
+  module KV (Storage : STORAGE) : Irmin.KV_MAKER
+end

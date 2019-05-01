@@ -78,3 +78,8 @@ module KV
     (Irmin.Path.String_list)
     (Irmin.Branch.String)
     (Irmin.Hash.SHA1)
+
+module Mem = struct
+  module Make (Storage : STORAGE) = Make (Storage) (Irmin_mem.Atomic_write)
+  module KV (Storage : STORAGE) = KV (Storage) (Irmin_mem.Atomic_write)
+end

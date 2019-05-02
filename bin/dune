@@ -1,0 +1,3 @@
+(executable
+  (name main)
+  (libraries digestif.c irmin-remote-s3 irmin-unix))

@@ -117,9 +117,4 @@ module Client (Client : Cohttp_lwt.S.Client) = struct
         Irmin.Private.Conf.(some auth)
         None
   end
-
-  module Mem = struct
-    module Make = Irmin_remote.Make (Storage) (Irmin_mem.Atomic_write)
-    module KV = Irmin_remote.KV (Storage) (Irmin_mem.Atomic_write)
-  end
 end

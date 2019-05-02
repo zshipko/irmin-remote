@@ -1,4 +1,4 @@
 (library
  (name irmin_remote_s3)
  (public_name irmin-remote-s3)
- (libraries irmin-remote irmin-mem irmin-git irmin-fs aws-s3-lwt))
+ (libraries irmin-remote aws-s3-lwt))

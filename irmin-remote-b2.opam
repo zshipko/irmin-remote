@@ -13,7 +13,7 @@ depends:
     "ocaml" {>= "4.05.0"}
     "dune" {build}
     "irmin-remote"
-    "aws-s3-lwt"
+    "b2"
 ]
 
 depopts: []
@@ -24,5 +24,5 @@ build:
 ]
 
 synopsis: """
-Remote object storage on Amazon S3 using Irmin
+Remote object storage on Backblaze B2 using Irmin
 """

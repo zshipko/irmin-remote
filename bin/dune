@@ -2,8 +2,3 @@
   (name s3_main)
   (modules s3_main)
   (libraries checkseum.c digestif.c irmin-remote-s3 irmin-unix))
-
-(executable
-  (name b2_main)
-  (modules b2_main)
-  (libraries checkseum.c digestif.c irmin-remote-b2 irmin-unix))

@@ -5,8 +5,9 @@ module Credentials = Aws_s3.Credentials
 
 type context = { bucket : string; auth : Credentials.t; region : Region.t }
 
-let context ~bucket ~auth ~region =
+let context ~bucket ~access_key ~secret_key ~region =
   let region = Region.of_string region in
+  let auth = Credentials.make ~access_key ~secret_key () in
   { bucket; auth; region }
 
 let endpoint t = Aws_s3.Region.endpoint ~inet:`V4 ~scheme:`Https t.region
@@ -33,7 +34,8 @@ module Storage = struct
 
   let t =
     let open Irmin.Type in
-    record "s3" (fun bucket auth region -> context ~bucket ~auth ~region)
+    record "s3" (fun bucket auth region ->
+        { bucket; auth; region = Region.of_string region } )
     |+ field "bucket" string (fun x -> x.bucket)
     |+ field "auth" credentials (fun x -> x.auth)
     |+ field "region" string (fun x -> Region.to_string x.region)

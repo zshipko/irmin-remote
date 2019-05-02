@@ -105,6 +105,17 @@ module Client (Client : Cohttp_lwt.S.Client) = struct
           API.delete_file_version ~token ~file_name:key ~file_id:f.file_id
           >>= fun _ -> Lwt.return_unit
       | _ -> Lwt.return_unit
+
+    let auth =
+      let parser = Irmin.Type.of_string t in
+      let fmt = Irmin.Type.pp t in
+      (parser, fmt)
+
+    let config_key =
+      Irmin.Private.Conf.key ~docv:"AUTH" ~doc:"Remote store credentials"
+        "credentials"
+        Irmin.Private.Conf.(some auth)
+        None
   end
 
   module Mem = struct

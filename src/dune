@@ -1,4 +1,4 @@
 (library
  (name irmin_remote)
  (public_name irmin-remote)
- (libraries irmin irmin-mem irmin-git))
+ (libraries irmin irmin-mem irmin-fs irmin-git))

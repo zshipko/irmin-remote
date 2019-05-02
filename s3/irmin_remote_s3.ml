@@ -11,6 +11,13 @@ let context ~bucket ~auth ~region =
 
 let endpoint t = Aws_s3.Region.endpoint ~inet:`V4 ~scheme:`Https t.region
 
+let string_of_error = function
+  | S3.Redirect _ -> "Redirected"
+  | S3.Throttled -> "Throttled"
+  | S3.Unknown (_, msg) -> msg
+  | S3.Failed f -> raise f
+  | S3.Not_found -> "Not found"
+
 module Storage = struct
   type t = context
 
@@ -48,12 +55,23 @@ module Storage = struct
     S3.delete ~credentials:t.auth ~bucket:t.bucket ~endpoint ~key ()
     >|= function
     | Ok _ -> ()
-    | Error _ -> invalid_arg "Storage.del"
+    | Error err -> invalid_arg ("Storage.del: " ^ string_of_error err)
 
   let put t key data =
     let endpoint = endpoint t in
     S3.put ~credentials:t.auth ~bucket:t.bucket ~endpoint ~key ~data ()
     >|= function
     | Ok _ -> ()
-    | Error _ -> invalid_arg "Storage.put"
+    | Error err -> invalid_arg ("Storage.put: " ^ string_of_error err)
+
+  let auth =
+    let parser = Irmin.Type.of_string t in
+    let fmt = Irmin.Type.pp t in
+    (parser, fmt)
+
+  let config_key =
+    Irmin.Private.Conf.key ~docv:"AUTH" ~doc:"Remote store credentials"
+      "credentials"
+      Irmin.Private.Conf.(some auth)
+      None
 end

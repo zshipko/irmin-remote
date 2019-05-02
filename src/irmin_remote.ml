@@ -5,6 +5,8 @@ module type STORAGE = sig
 
   val t : t Irmin.Type.t
 
+  val config_key : t option Irmin.Private.Conf.key
+
   val exists : t -> string -> bool Lwt.t
 
   val get : t -> string -> string option Lwt.t
@@ -14,16 +16,6 @@ module type STORAGE = sig
   val del : t -> string -> unit Lwt.t
 end
 
-module type S = sig
-  type storage
-
-  val storage : storage Irmin.Private.Conf.key
-
-  val config : ?confing:Irmin.config -> storage -> Irmin.config
-
-  include Irmin.S
-end
-
 module Remote (Storage : STORAGE) (Key : Irmin.Hash.S) (Value : Irmin.Type.S) =
 struct
   type 'a t = { storage : Storage.t }
@@ -31,25 +23,6 @@ struct
   type key = Key.t
 
   type value = Value.t
-
-  let auth =
-    let parser = Irmin.Type.of_string Storage.t in
-    let fmt = Irmin.Type.pp Storage.t in
-    (parser, fmt)
-
-  let credentials =
-    Irmin.Private.Conf.key ~docv:"AUTH" ~doc:"Remote store credentials"
-      "credentials"
-      Irmin.Private.Conf.(some auth)
-      None
-
-  let v config =
-    let storage =
-      match Irmin.Private.Conf.get config credentials with
-      | Some x -> x
-      | None -> raise (Invalid_argument "Remote.v: Invalid credentials")
-    in
-    Lwt.return { storage }
 
   let batch { storage } f = f { storage }
 
@@ -66,6 +39,14 @@ struct
     let hash = Key.digest s in
     let hash_s = Irmin.Type.to_string Key.t hash in
     Storage.put t.storage hash_s s >|= fun () -> hash
+
+  let v config =
+    let storage =
+      match Irmin.Private.Conf.get config Storage.config_key with
+      | Some x -> x
+      | None -> raise (Invalid_argument "Remote.v: Invalid credentials")
+    in
+    Lwt.return { storage }
 end
 
 module Make (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) =

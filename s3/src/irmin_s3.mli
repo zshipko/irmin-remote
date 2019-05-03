@@ -9,4 +9,5 @@ val context :
   region:string ->
   context
 
-module Storage : Irmin_remote.STORAGE with type t = context
+module Make (X : Aws_s3.Types.Io with type 'a Deferred.t = 'a Lwt.t) :
+  Irmin_remote.STORAGE with type t = context

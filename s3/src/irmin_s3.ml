@@ -1,5 +1,4 @@
 open Lwt.Infix
-open Aws_s3_lwt
 module Region = Aws_s3.Region
 module Credentials = Aws_s3.Credentials
 
@@ -10,17 +9,17 @@ let context ~bucket ~access_key ~secret_key ~region =
   let auth = Credentials.make ~access_key ~secret_key () in
   { bucket; auth; region }
 
-let endpoint t = Aws_s3.Region.endpoint ~inet:`V4 ~scheme:`Https t.region
+module Make (X : Aws_s3.Types.Io with type 'a Deferred.t = 'a Lwt.t) = struct
+  module S3 = Aws_s3.S3.Make (X)
 
-let string_of_error = function
-  | S3.Redirect _ -> "Redirected"
-  | S3.Throttled -> "Throttled"
-  | S3.Unknown (_, msg) -> msg
-  | S3.Failed f -> raise f
-  | S3.Not_found -> "Not found"
+  let endpoint t = Aws_s3.Region.endpoint ~inet:`V4 ~scheme:`Https t.region
 
-module Storage = struct
-  type t = context
+  let string_of_error = function
+    | S3.Redirect _ -> "Redirected"
+    | S3.Throttled -> "Throttled"
+    | S3.Unknown (_, msg) -> msg
+    | S3.Failed f -> raise f
+    | S3.Not_found -> "Not found"
 
   let credentials =
     let open Irmin.Type in
@@ -31,6 +30,8 @@ module Storage = struct
     |+ field "token" (option string) (fun x -> x.Credentials.token)
     |+ field "expiration" (option float) (fun x -> x.Credentials.expiration)
     |> sealr
+
+  type t = context
 
   let t =
     let open Irmin.Type in

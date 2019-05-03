@@ -1,4 +1,4 @@
 (executable
   (name s3_main)
   (modules s3_main)
-  (libraries checkseum.c digestif.c irmin-remote-s3 irmin-unix))
+  (libraries checkseum.c digestif.c irmin-s3-unix irmin-unix))

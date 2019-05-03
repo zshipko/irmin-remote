@@ -1,0 +1,4 @@
+(library
+ (name irmin_s3_unix)
+ (public_name irmin-s3-unix)
+ (libraries irmin-s3 aws-s3-lwt))

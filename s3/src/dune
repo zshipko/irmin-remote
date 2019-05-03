@@ -1,0 +1,4 @@
+(library
+ (name irmin_s3)
+ (public_name irmin-s3)
+ (libraries irmin-remote aws-s3))

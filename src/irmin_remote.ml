@@ -16,20 +16,23 @@ module type STORAGE = sig
   val del : t -> string -> unit Lwt.t
 end
 
-module Remote (Storage : STORAGE) (Key : Irmin.Hash.S) (Value : Irmin.Type.S) =
+module Content_addressable
+    (Storage : STORAGE)
+    (Key : Irmin.Hash.S)
+    (Value : Irmin.Type.S) =
 struct
-  type 'a t = { storage : Storage.t }
+  type 'a t = Storage.t
 
   type key = Key.t
 
   type value = Value.t
 
-  let batch { storage } f = f { storage }
+  let batch storage f = f storage
 
-  let mem t key = Storage.exists t.storage (Irmin.Type.to_string Key.t key)
+  let mem t key = Storage.exists t (Irmin.Type.to_string Key.t key)
 
   let find t key =
-    Storage.get t.storage (Irmin.Type.to_string Key.t key) >|= function
+    Storage.get t (Irmin.Type.to_string Key.t key) >|= function
     | None -> None
     | Some x -> (
       match Irmin.Type.of_string Value.t x with Ok x -> Some x | _ -> None )
@@ -38,7 +41,7 @@ struct
     let s = Irmin.Type.to_string Value.t value in
     let hash = Key.digest s in
     let hash_s = Irmin.Type.to_string Key.t hash in
-    Storage.put t.storage hash_s s >|= fun () -> hash
+    Storage.put t hash_s s >|= fun () -> hash
 
   let v config =
     let storage =
@@ -46,16 +49,16 @@ struct
       | Some x -> x
       | None -> raise (Invalid_argument "Remote.v: Invalid credentials")
     in
-    Lwt.return { storage }
+    Lwt.return storage
 end
 
 module Make (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) =
-  Irmin.Make (Remote (Storage)) (AW)
+  Irmin.Make (Content_addressable (Storage)) (AW)
 module KV
     (Storage : STORAGE)
     (AW : Irmin.ATOMIC_WRITE_STORE_MAKER)
     (C : Irmin.Contents.S) =
-  Irmin.Make (Remote (Storage)) (AW) (Irmin.Metadata.None) (C)
+  Irmin.Make (Content_addressable (Storage)) (AW) (Irmin.Metadata.None) (C)
     (Irmin.Path.String_list)
     (Irmin.Branch.String)
     (Irmin.Hash.SHA1)
@@ -63,4 +66,16 @@ module KV
 module Mem = struct
   module Make (Storage : STORAGE) = Make (Storage) (Irmin_mem.Atomic_write)
   module KV (Storage : STORAGE) = KV (Storage) (Irmin_mem.Atomic_write)
+end
+
+module Git = struct
+  module Make (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) =
+    Irmin_git.Generic (Content_addressable (Storage)) (AW)
+  module KV (Storage : STORAGE) (AW : Irmin.ATOMIC_WRITE_STORE_MAKER) =
+    Irmin_git.Generic_KV (Content_addressable (Storage)) (AW)
+
+  module Mem = struct
+    module Make (Storage : STORAGE) = Make (Storage) (Irmin_mem.Atomic_write)
+    module KV (Storage : STORAGE) = KV (Storage) (Irmin_mem.Atomic_write)
+  end
 end
